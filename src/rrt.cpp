@@ -95,7 +95,7 @@ bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
     ss.setStateValidityChecker(boost::bind(&RRT::stateIsValid, this, _1));
 
     tf::Pose pose;
-    tf::poseMsgToTF(odom->pose.pose, pose);
+    tf::poseMsgToTF(turtle_start.pose, pose);
     double start_yaw = tf::getYaw(pose.getRotation());
     ompl::base::ScopedState<> start_state(space);
     start_state->as<ompl::base::SE2StateSpace::StateType>()->setX(turtle_start.pose.position.x);
@@ -103,7 +103,7 @@ bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
     start_state->as<ompl::base::SE2StateSpace::StateType>()->setYaw(start_yaw);
     ROS_DEBUG_STREAM("Set rrt start state to ( " << turtle_start.pose.position.x << ", " << turtle_start.pose.position.y << ", " << start_yaw << ")");
 
-    tf::poseMsgToTF(odom->pose.pose, pose);
+    tf::poseMsgToTF(turtle_goal.pose, pose);
     double goal_yaw = tf::getYaw(pose.getRotation());
     ompl::base::ScopedState<> goal_state(space);
     goal_state->as<ompl::base::SE2StateSpace::StateType>()->setX(turtle_goal.pose.position.x);

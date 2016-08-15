@@ -22,7 +22,7 @@
 #include <ompl/geometric/planners/rrt/RRT.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <pluginlib/class_list_macros.h>
-#include <tf/Pose.h>
+#include <tf/tf.h>
 
 
 class RRT : public nav_core::BaseGlobalPlanner {
