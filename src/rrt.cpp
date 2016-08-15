@@ -76,11 +76,12 @@ bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
     ompl::base::StateSpacePtr space(new ompl::base::SE2StateSpace());
     ompl::base::SpaceInformationPtr si(new ompl::base::SpaceInformation(space));
 
+    int x = 0, y = 1;
     ompl::base::RealVectorBounds bounds(2);
-    bounds.setLow(0, costmap->getOriginX());
-    bounds.setHigh(0, costmap->getSizeInMetersX() - costmap->getOriginX());
-    bounds.setLow(1, costmap->getOriginY());
-    bounds.setHigh(1, costmap->getSizeInMetersY() - costmap->getOriginY());
+    bounds.setLow(x, costmap->getOriginX());
+    bounds.setHigh(x, costmap->getSizeInMetersX() - costmap->getOriginX());
+    bounds.setLow(y, costmap->getOriginY());
+    bounds.setHigh(y, costmap->getSizeInMetersY() - costmap->getOriginY());
     space->as<ompl::base::SE2StateSpace>()->setBounds(bounds);
 
     ompl::geometric::SimpleSetup ss(si);
@@ -88,24 +89,27 @@ bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
     ompl::base::PlannerPtr rrt_star(new ompl::geometric::RRTstar(si));
     ss.setPlanner(rrt_star);
 
-    // Let's optimize for shortest path length
     ompl::base::OptimizationObjectivePtr obj(new ompl::base::PathLengthOptimizationObjective(si));
     ss.setOptimizationObjective(obj);
 
-    // Set state validity checking for this space
     ss.setStateValidityChecker(boost::bind(&RRT::stateIsValid, this, _1));
 
-    // Create start state
+    tf::Pose pose;
+    tf::poseMsgToTF(odom->pose.pose, pose);
+    double start_yaw = tf::getYaw(pose.getRotation());
     ompl::base::ScopedState<> start_state(space);
     start_state->as<ompl::base::SE2StateSpace::StateType>()->setX(turtle_start.pose.position.x);
-    start_state->as<ompl::base::SE2StateSpace::StateType>()->setY(turtle_start.pose.position.y);
-    // start->as<ompl::base::SE2StateSpace::StateType>()->setYaw(turtle_start.pose.orie);
-    ROS_DEBUG_STREAM("Set start pose to ( " << turtle_start.pose.position.x << ", " << turtle_start.pose.position.y << " )");
+    start_state->as<ompl::base::SE2StateSpace::StateType>()->setY(turtle_start.pose.position.y);   
+    start_state->as<ompl::base::SE2StateSpace::StateType>()->setYaw(start_yaw);
+    ROS_DEBUG_STREAM("Set rrt start state to ( " << turtle_start.pose.position.x << ", " << turtle_start.pose.position.y << ", " << start_yaw << ")");
 
+    tf::poseMsgToTF(odom->pose.pose, pose);
+    double goal_yaw = tf::getYaw(pose.getRotation());
     ompl::base::ScopedState<> goal_state(space);
     goal_state->as<ompl::base::SE2StateSpace::StateType>()->setX(turtle_goal.pose.position.x);
     goal_state->as<ompl::base::SE2StateSpace::StateType>()->setY(turtle_goal.pose.position.y);
-    ROS_DEBUG_STREAM("Set goal pose to ( " << turtle_goal.pose.position.x << ", " << turtle_goal.pose.position.y << " )");
+    goal_state->as<ompl::base::SE2StateSpace::StateType>()->setYaw(goal_yaw);
+    ROS_DEBUG_STREAM("Set rrt goal state to ( " << turtle_goal.pose.position.x << ", " << turtle_goal.pose.position.y << ", " << goal_yaw << ")");
     ss.setStartAndGoalStates(start_state, goal_state);
 
     ss.setup();
@@ -117,18 +121,15 @@ bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
         ss.simplifySolution();
         ompl::geometric::PathGeometric planner_soln = ss.getSolutionPath();
         planner_soln.print(std::cout);
-        nav_msgs::Path turtle_soln = omplToRosPath(planner_soln);
-
+        nav_msgs::Path turtle_soln = extractNavPath(planner_soln);
         geometry_msgs::PoseStamped temp_pose;
         for (unsigned i = 0; i < turtle_soln.poses.size(); i++) {
             ros::Time plan_time = ros::Time::now();
-
             temp_pose.header.stamp = plan_time;
             temp_pose.header.frame_id = costmap_ros->getGlobalFrameID();
             temp_pose.pose = turtle_soln.poses[i].pose;
             plan.push_back(temp_pose);
         }
-
         plan_pub.publish(turtle_soln);
         ros::spinOnce();
     } else {

@@ -22,6 +22,7 @@
 #include <ompl/geometric/planners/rrt/RRT.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <pluginlib/class_list_macros.h>
+#include <tf/Pose.h>
 
 
 class RRT : public nav_core::BaseGlobalPlanner {
@@ -67,7 +68,7 @@ private:
     void mapCallback(nav_msgs::OccupancyGrid new_map);
     void amclPoseCallback(geometry_msgs::PoseWithCovarianceStamped new_pose);
     bool stateIsValid(const ompl::base::State *state);
-    nav_msgs::Path omplToRosPath(ompl::geometric::PathGeometric ompl_path);
+    nav_msgs::Path extractNavPath(ompl::geometric::PathGeometric ompl_path);
 };
 
 geometry_msgs::Quaternion convertPlanarPhiToQuaternion(double phi) {
@@ -117,7 +118,7 @@ nav_msgs::OccupancyGrid::Ptr RRT::getInflatedMap(){
     return inflated_map;
 }
 
-nav_msgs::Path RRT::omplToRosPath(ompl::geometric::PathGeometric ompl_path) {
+nav_msgs::Path RRT::extractNavPath(ompl::geometric::PathGeometric ompl_path) {
     nav_msgs::Path ros_path;
     ros_path.header.frame_id = "map";
     std::vector<ompl::base::State*> ompl_states = ompl_path.getStates();
