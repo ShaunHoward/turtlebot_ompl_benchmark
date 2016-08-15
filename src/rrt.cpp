@@ -1,4 +1,4 @@
-#include <turtlebot_rrt_benchmark/rrt.h>
+#include <turtlebot_rrt/rrt.h>
 
 void RRT::initialize(std::string name, costmap_2d::Costmap2DROS* new_costmap_ros) {
     if (!initialized) {
@@ -9,7 +9,7 @@ void RRT::initialize(std::string name, costmap_2d::Costmap2DROS* new_costmap_ros
         private_nh.param("min_dist_from_robot", robot_radius, 0.2);
         world_model = new base_local_planner::CostmapModel(*costmap);
 
-        plan_publisher = private_nh.advertise<nav_msgs::Path>("rrt_plan", 1, true);
+        plan_pub = private_nh.advertise<nav_msgs::Path>("rrt_plan", 1, true);
         initialized = true;
     }
     else {
@@ -46,12 +46,12 @@ void RRT::mapCallback(nav_msgs::OccupancyGrid latest_map){
 
 void RRT::amclPoseCallback(geometry_msgs::PoseWithCovarianceStamped new_pose) {
     amcl_pose = new_pose.pose.pose;
-    pose_received = true;
+    pose_found = true;
 }
 
 void RRT::initializeSubscribers() {
 	map_sub = nh.subscribe("map", 1, &RRT::mapCallback, this);
-	amcl_pose_subscriber = nh.subscribe("amcl_pose", 1, &RRT::amclPoseCallback, this);
+	amcl_pose_sub = nh.subscribe("amcl_pose", 1, &RRT::amclPoseCallback, this);
 }
 
 bool RRT::stateIsValid(const ompl::base::State *state) {
@@ -65,7 +65,7 @@ bool RRT::stateIsValid(const ompl::base::State *state) {
     return point_cost >= 0;
 }
 
-bool RRT:makePlan(const geometry_msgs::PoseStamped& turtle_start,
+bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
                   const geometry_msgs::PoseStamped& turtle_goal,
                   std::vector<geometry_msgs::PoseStamped>& plan) {
 
@@ -91,21 +91,21 @@ bool RRT:makePlan(const geometry_msgs::PoseStamped& turtle_start,
 
     // Let's optimize for shortest path length
     ompl::base::OptimizationObjectivePtr obj(new ompl::base::PathLengthOptimizationObjective(si));
-    sss.setOptimizationObjective(obj);
+    ss.setOptimizationObjective(obj);
 
     // Set state validity checking for this space
-    ss.setStateValidityChecker(boost::bind(&PRM::isStateValid, this, _1));
+    ss.setStateValidityChecker(boost::bind(&RRT::stateIsValid, this, _1));
 
     // Create start state
     ompl::base::ScopedState<> start_state(space);
-    ompl_start->as<ompl::base::SE2StateSpace::StateType>()->setX(turtle_start.pose.position.x);
-    ompl_start->as<ompl::base::SE2StateSpace::StateType>()->setY(turtle_start.pose.position.y);
+    start_state->as<ompl::base::SE2StateSpace::StateType>()->setX(turtle_start.pose.position.x);
+    start_state->as<ompl::base::SE2StateSpace::StateType>()->setY(turtle_start.pose.position.y);
     // start->as<ompl::base::SE2StateSpace::StateType>()->setYaw(turtle_start.pose.orie);
     ROS_DEBUG_STREAM("Set start pose to ( " << turtle_start.pose.position.x << ", " << turtle_start.pose.position.y << " )");
 
     ompl::base::ScopedState<> goal_state(space);
-    ompl_goal->as<ompl::base::SE2StateSpace::StateType>()->setX(turtle_goal.pose.position.x);
-    ompl_goal->as<ompl::base::SE2StateSpace::StateType>()->setY(turtle_goal.pose.position.y);
+    goal_state->as<ompl::base::SE2StateSpace::StateType>()->setX(turtle_goal.pose.position.x);
+    goal_state->as<ompl::base::SE2StateSpace::StateType>()->setY(turtle_goal.pose.position.y);
     ROS_DEBUG_STREAM("Set goal pose to ( " << turtle_goal.pose.position.x << ", " << turtle_goal.pose.position.y << " )");
     ss.setStartAndGoalStates(start_state, goal_state);
 
@@ -118,7 +118,7 @@ bool RRT:makePlan(const geometry_msgs::PoseStamped& turtle_start,
         ss.simplifySolution();
         ompl::geometric::PathGeometric planner_soln = ss.getSolutionPath();
         planner_soln.print(std::cout);
-        nav_msgs::Path turtle_soln = omplToRosPath(ompl_solution_path);
+        nav_msgs::Path turtle_soln = omplToRosPath(planner_soln);
 
         geometry_msgs::PoseStamped temp_pose;
         for (unsigned i = 0; i < turtle_soln.poses.size(); i++) {
@@ -130,7 +130,7 @@ bool RRT:makePlan(const geometry_msgs::PoseStamped& turtle_start,
             plan.push_back(temp_pose);
         }
 
-        plan_publisher.publish(turtle_soln);
+        plan_pub.publish(turtle_soln);
         ros::spinOnce();
     } else {
         ROS_WARN("Could not find RRT solution...");

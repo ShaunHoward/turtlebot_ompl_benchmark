@@ -19,7 +19,7 @@
 #include <ompl/base/spaces/SE2StateSpace.h>
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/geometric/SimpleSetup.h>
-#include <omply/geometric/planners/rrt/RRT.h>
+#include <ompl/geometric/planners/rrt/RRT.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <pluginlib/class_list_macros.h>
 
@@ -42,9 +42,9 @@ private:
     nav_msgs::OccupancyGrid::Ptr inflated_map;
     geometry_msgs::Pose amcl_pose;
 
-    ros::Subscriber map_subscriber;
-    ros::Subscriber amcl_pose_subscriber;
-    ros::Publisher plan_publisher;
+    ros::Subscriber map_sub;
+    ros::Subscriber amcl_pose_sub;
+    ros::Publisher plan_pub;
 
     costmap_2d::Costmap2DROS* costmap_ros;
     costmap_2d::Costmap2D* costmap;
@@ -66,8 +66,8 @@ private:
     void initializeSubscribers();
     void mapCallback(nav_msgs::OccupancyGrid new_map);
     void amclPoseCallback(geometry_msgs::PoseWithCovarianceStamped new_pose);
-    bool isStateValid(const ompl::base::State *state);
-    nav_msgs::Path omplPathToRosPath(ompl::geometric::PathGeometric ompl_path);
+    bool stateIsValid(const ompl::base::State *state);
+    nav_msgs::Path omplToRosPath(ompl::geometric::PathGeometric ompl_path);
 };
 
 geometry_msgs::Quaternion convertPlanarPhiToQuaternion(double phi) {
@@ -81,8 +81,8 @@ geometry_msgs::Quaternion convertPlanarPhiToQuaternion(double phi) {
 
 RRT::RRT() :
         costmap_ros(NULL),
-        map_received(false),
-        pose_received(false),
+        map_found(false),
+        pose_found(false),
         initialized(false),
         robot_radius(0.2),
         unknown_okay(false),
@@ -98,8 +98,8 @@ RRT::RRT() :
 
 RRT::RRT(std::string name, costmap_2d::Costmap2DROS* new_costmap_ros) :
         costmap_ros(NULL),
-        map_received(false),
-        pose_received(false),
+        map_found(false),
+        pose_found(false),
         initialized(false),
         unknown_okay(false),
         occupied_threshold(50),
