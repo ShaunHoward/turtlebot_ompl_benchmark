@@ -21,9 +21,9 @@ catkin_package(
 )
 
 include_directories(
+    include
     ${catkin_INCLUDE_DIRS}
     ${OMPL_INCLUDE_DIRS}
-    include
 )
 
 add_library(rrt_lib src/rrt.cpp)
