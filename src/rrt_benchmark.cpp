@@ -64,3 +64,76 @@ bool RRT::stateIsValid(const ompl::base::State *state) {
     double point_cost = world_model->footprintCost(point, footprint, robot_radius, robot_radius);
     return point_cost >= 0;
 }
+
+bool RRT:makePlan(const geometry_msgs::PoseStamped& turtle_start,
+                  const geometry_msgs::PoseStamped& turtle_goal,
+                  std::vector<geometry_msgs::PoseStamped>& plan) {
+
+    if (!initialized) {
+        ROS_ERROR("initialize() must be called on the planner before using... exiting...");
+        return false;
+    }
+
+    ompl::base::StateSpacePtr space(new ompl::base::SE2StateSpace());
+    ompl::base::SpaceInformationPtr si(new ompl::base::SpaceInformation(space));
+
+    ompl::base::RealVectorBounds bounds(2);
+    bounds.setLow(0, costmap->getOriginX());
+    bounds.setHigh(0, costmap->getSizeInMetersX() - costmap->getOriginX());
+    bounds.setLow(1, costmap->getOriginY());
+    bounds.setHigh(1, costmap->getSizeInMetersY() - costmap->getOriginY());
+    space->as<ompl::base::SE2StateSpace>()->setBounds(bounds);
+
+    ompl::geometric::SimpleSetup ss(si);
+
+    ompl::base::PlannerPtr rrt_star(new ompl::geometric::RRTstar(si));
+    ss.setPlanner(rrt_star);
+
+    // Let's optimize for shortest path length
+    ompl::base::OptimizationObjectivePtr obj(new ompl::base::PathLengthOptimizationObjective(si));
+    sss.setOptimizationObjective(obj);
+
+    // Set state validity checking for this space
+    ss.setStateValidityChecker(boost::bind(&PRM::isStateValid, this, _1));
+
+    // Create start state
+    ompl::base::ScopedState<> start_state(space);
+    ompl_start->as<ompl::base::SE2StateSpace::StateType>()->setX(turtle_start.pose.position.x);
+    ompl_start->as<ompl::base::SE2StateSpace::StateType>()->setY(turtle_start.pose.position.y);
+    // start->as<ompl::base::SE2StateSpace::StateType>()->setYaw(turtle_start.pose.orie);
+    ROS_DEBUG_STREAM("Set start pose to ( " << turtle_start.pose.position.x << ", " << turtle_start.pose.position.y << " )");
+
+    ompl::base::ScopedState<> goal_state(space);
+    ompl_goal->as<ompl::base::SE2StateSpace::StateType>()->setX(turtle_goal.pose.position.x);
+    ompl_goal->as<ompl::base::SE2StateSpace::StateType>()->setY(turtle_goal.pose.position.y);
+    ROS_DEBUG_STREAM("Set goal pose to ( " << turtle_goal.pose.position.x << ", " << turtle_goal.pose.position.y << " )");
+    ss.setStartAndGoalStates(start_state, goal_state);
+
+    ss.setup();
+    ss.print();
+
+    ompl::base::PlannerStatus solved = ss.solve(10.0);
+    if (solved) {
+        ROS_INFO("Found RRT solution:");
+        ss.simplifySolution();
+        ompl::geometric::PathGeometric planner_soln = ss.getSolutionPath();
+        planner_soln.print(std::cout);
+        nav_msgs::Path turtle_soln = omplToRosPath(ompl_solution_path);
+
+        geometry_msgs::PoseStamped temp_pose;
+        for (unsigned i = 0; i < turtle_soln.poses.size(); i++) {
+            ros::Time plan_time = ros::Time::now();
+
+            temp_pose.header.stamp = plan_time;
+            temp_pose.header.frame_id = costmap_ros->getGlobalFrameID();
+            temp_pose.pose = turtle_soln.poses[i].pose;
+            plan.push_back(temp_pose);
+        }
+
+        plan_publisher.publish(turtle_soln);
+        ros::spinOnce();
+    } else {
+        ROS_WARN("Could not find RRT solution...");
+    }
+return true;
+}

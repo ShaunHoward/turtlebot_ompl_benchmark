@@ -7,5 +7,5 @@ Path planning with the Turtlebot using various RRT algorithms from ompl.
 restart shell for changes to take effect
 
 # run robot simulator and planner
--catkin_make
--roslaunch turtlebot_rrt start_rrt_benchmark.launch
+- catkin_make
+- roslaunch turtlebot_rrt start_rrt_benchmark.launch
