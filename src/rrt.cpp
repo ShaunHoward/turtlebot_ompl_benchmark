@@ -29,17 +29,16 @@ void RRT::mapCallback(nav_msgs::OccupancyGrid latest_map){
     geometry_msgs::Polygon bounds = occupancy_grid_utils::gridPolygon(inflated_map->info);
     // determine map limits
     for (unsigned i = 0; i < bounds.points.size(); i++) {
-        if (bounds.points[i].x > max_x) {
-            max_x = bounds.points[i].x;
-        }
         if (bounds.points[i].x < min_x) {
             min_x = bounds.points[i].x;
+        } else if (bounds.points[i].x > max_x) {
+            max_x = bounds.points[i].x;
         }
-        if (bounds.points[i].y > max_y) {
-            max_y = bounds.points[i].y;
-        }
+
         if (bounds.points[i].y < min_y) {
             min_y = bounds.points[i].y;
+        } else if (bounds.points[i].y > max_y) {
+            max_y = bounds.points[i].y;
         }
     }
 }

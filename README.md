@@ -11,7 +11,13 @@ Path planning with the Turtlebot using various RRT algorithms from ompl.
 - cd ~/projects/ros_ws/src
 - rosdep install --from-paths . --ignore-src --rosdistro=indigo
 
-# run robot simulator and planner
+# create map
+- roslaunch turtlebot_rrt start_sim_map.launch
+- roslaunch turtlebot_teleop keyboard_teleop.launch
+- create the map by driving around with keyboard commands
+- once map is ready to save: rosrun map_server map_saver -f /path/to/map_file
+
+# run robot simulator and planner with known map
 - cd ~/projects/ros_ws
 - catkin_make
-- roslaunch turtlebot_rrt start_rrt_benchmark.launch
+- roslaunch turtlebot_rrt start_sim_plan.launch 
