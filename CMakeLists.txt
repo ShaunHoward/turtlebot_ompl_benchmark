@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(project2)
+project(turtlebot_rrt)
+
+if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+endif()
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -7,20 +11,20 @@ project(project2)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
-  std_msgs
-  geometry_msgs
-  sensor_msgs
-  message_generation
+  occupancy_grid_utils
+  costmap_2d
+  nav_core
+  base_local_planner
 )
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
-
+find_package(Boost REQUIRED COMPONENTS system)
+find_package(OMPL REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-catkin_python_setup()
+# catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -47,8 +51,6 @@ catkin_python_setup()
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-    FILES ScanWithVariance.msg ScanWithVarianceStamped.msg DebugInfo.msg)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -65,7 +67,7 @@ add_message_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(DEPENDENCIES std_msgs)
+#generate_messages(DEPENDENCIES std_msgs)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -99,7 +101,7 @@ generate_messages(DEPENDENCIES std_msgs)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES project2
-    CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs sensor_msgs message_runtime
+#    CATKIN_DEPENDS roscpp rospy
 #  DEPENDS system_lib
 )
 
@@ -111,13 +113,13 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  ${catkin_INCLUDE_DIRS}
+    ${catkin_INCLUDE_DIRS}
+    ${OMPL_INCLUDE_DIRS}
+    include
 )
 
 ## Declare a C++ library
-# add_library(project2
-#   src/${PROJECT_NAME}/project2.cpp
-# )
+add_library(rrt_lib src/rrt_benchmark.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -132,9 +134,7 @@ include_directories(
 # add_dependencies(project2_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(project2_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(rrt_lib ${catkin_LIBRARIES} ${OMPL_LIBRARIES})
 
 #############
 ## Install ##

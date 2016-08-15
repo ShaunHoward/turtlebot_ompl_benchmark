@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>project2</name>
+  <name>turtlebot_rrt</name>
   <version>0.0.0</version>
-  <description>The project2 package</description>
+  <description>The turtlebot_rrt package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
@@ -42,17 +42,15 @@
   <buildtool_depend>catkin</buildtool_depend>
   <depend>roscpp</depend>
   <depend>rospy</depend>
-  <depend>std_msgs</depend>
-  <depend>geometry_msgs</depend>
-  <depend>sensor_msgs</depend>
-    <depend>python-numpy</depend>
-  <build_depend>message_generation</build_depend>
-  <exec_depend>message_runtime</exec_depend>
+  <depend>occupancy_grid_utils</depend>
+  <depend>costmap_2d</depend>
+  <depend>nav_core</depend>
+  <depend>base_local_planner</depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
-
+    <!-- <nav_core plugin="${prefix}/rrt_plugin.xml"/> -->
   </export>
 </package>
