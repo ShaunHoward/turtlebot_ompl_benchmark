@@ -64,6 +64,17 @@ bool RRT::stateIsValid(const ompl::base::State *state) {
     return point_cost >= 0;
 }
 
+
+void propagate(const ompl::base::State *start, const ompl::control::Control *control, const double duration, ompl::base::State *result) {
+    const ompl::base::SE2StateSpace::StateType *se2state = start->as<ompl::base::SE2StateSpace::StateType>();
+    const double* pos = se2state->as<ompl::base::RealVectorStateSpace::StateType>(0)->values;
+    const double rot = se2state->as<ompl::base::SO2StateSpace::StateType>(1)->value;
+    const double* ctrl = control->as<ompl::control::RealVectorControlSpace::ControlType>()->values;
+    result->as<ompl::base::SE2StateSpace::StateType>()->setXY(pos[0] + ctrl[0] * duration * cos(rot),
+                                                      pos[1] + ctrl[0] * duration * sin(rot));
+    result->as<ompl::base::SE2StateSpace::StateType>()->setYaw(rot + ctrl[1] * duration);
+}
+
 bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
                   const geometry_msgs::PoseStamped& turtle_goal,
                   std::vector<geometry_msgs::PoseStamped>& plan) {
@@ -74,7 +85,6 @@ bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
     }
 
     ompl::base::StateSpacePtr space(new ompl::base::SE2StateSpace());
-    ompl::base::SpaceInformationPtr si(new ompl::base::SpaceInformation(space));
 
     int x = 0, y = 1;
     ompl::base::RealVectorBounds bounds(2);
@@ -84,14 +94,23 @@ bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
     bounds.setHigh(y, costmap->getSizeInMetersY() - costmap->getOriginY());
     space->as<ompl::base::SE2StateSpace>()->setBounds(bounds);
 
-    ompl::geometric::SimpleSetup ss(si);
+    ompl::control::ControlSpacePtr cspace(new ompl::control::RealVectorControlSpace(space, 2));
+    ompl::base::RealVectorBounds cbounds(2);
+    cbounds.setLow(-0.3);
+    cbounds.setHigh(0.3);
+    cspace->as<ompl::control::RealVectorControlSpace>()->setBounds(cbounds);
 
-    ompl::base::PlannerPtr rrt_star(new ompl::geometric::RRTstar(si));
+    ompl::control::SimpleSetup ss(cspace);
+    ompl::control::SpaceInformation *si = ss.getSpaceInformation().get();  
+
+    //ompl::base::PlannerPtr rrt_star(new ompl::geometric::RRT(si));
+    ompl::base::PlannerPtr rrt(new ompl::control::RRT(*si));
     ss.setPlanner(rrt_star);
 
-    ompl::base::OptimizationObjectivePtr obj(new ompl::base::PathLengthOptimizationObjective(si));
-    ss.setOptimizationObjective(obj);
+    //ompl::base::OptimizationObjectivePtr obj(new ompl::base::PathLengthOptimizationObjective(si));
+    //ss.setOptimizationObjective(obj);
 
+    ss.setStatePropagator(propagate);
     ss.setStateValidityChecker(boost::bind(&RRT::stateIsValid, this, _1));
 
     tf::Pose pose;
