@@ -1,7 +1,6 @@
 #ifndef TURTLEBOT_RRT_RRT_H
 #define TURTLEBOT_RRT_RRT_H
 
-#include <functional>
 #include <ros/ros.h>
 
 #include <base_local_planner/costmap_model.h>
@@ -19,9 +18,9 @@
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/spaces/SE2StateSpace.h>
 #include <ompl/geometric/PathGeometric.h>
-#include <ompl/control/SimpleSetup.h>
-#include <ompl/control/planners/rrt/RRT.h>
-#include <ompl/control/spaces/RealVectorControlSpace.h>
+#include <ompl/geometric/SimpleSetup.h>
+#include <ompl/geometric/planners/rrt/RRT.h>
+#include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <pluginlib/class_list_macros.h>
 #include <tf/tf.h>
 
@@ -61,19 +60,16 @@ private:
     double min_y, max_y;
     double robot_radius;
     double step_size;
-	
+    
     bool map_found;
     bool pose_found;
 
-    void amclPoseCallback(geometry_msgs::PoseWithCovarianceStamped new_pose);
-    nav_msgs::Path extractNavPath(ompl::geometric::PathGeometric ompl_path);
     void initializeSubscribers();
     void mapCallback(nav_msgs::OccupancyGrid new_map);
+    void amclPoseCallback(geometry_msgs::PoseWithCovarianceStamped new_pose);
     bool stateIsValid(const ompl::base::State *state);
+    nav_msgs::Path extractNavPath(ompl::geometric::PathGeometric ompl_path);
 };
-
-void propagate(const ob::State *start, const oc::Control *control, const double duration, ob::State *result);
-
 
 geometry_msgs::Quaternion convertPlanarPhiToQuaternion(double phi) {
     geometry_msgs::Quaternion quaternion;
