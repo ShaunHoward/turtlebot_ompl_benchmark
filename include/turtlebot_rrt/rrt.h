@@ -20,7 +20,14 @@
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/rrt/RRT.h>
-#include <ompl/geometric/planners/prm/PRMstar.h>
+#include <ompl/geometric/planners/rrt/RRTstar.h>
+#include <ompl/geometric/planners/rrt/LazyRRT.h>
+#include <ompl/geometric/planners/rrt/BiTRRT.h>
+#include <ompl/geometric/planners/rrt/LazyLBTRRT.h>
+#include <ompl/geometric/planners/rrt/LBTRRT.h>
+#include <ompl/geometric/planners/rrt/pRRT.h>
+#include <ompl/geometric/planners/rrt/RRTConnect.h>
+
 #include <pluginlib/class_list_macros.h>
 #include <tf/tf.h>
 

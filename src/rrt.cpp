@@ -87,8 +87,8 @@ bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
 
     ompl::geometric::SimpleSetup ss(si);
 
-    ompl::base::PlannerPtr rrt_star(new ompl::geometric::RRT(si));
-    ss.setPlanner(rrt_star);
+    ompl::base::PlannerPtr rrt(new ompl::geometric::LazyRRT(si));
+    ss.setPlanner(rrt);
 
     ompl::base::OptimizationObjectivePtr obj(new ompl::base::PathLengthOptimizationObjective(si));
     ss.setOptimizationObjective(obj);
@@ -101,7 +101,7 @@ bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
     ompl::base::ScopedState<> start_state(space);
     start_state->as<ompl::base::SE2StateSpace::StateType>()->setX(turtle_start.pose.position.x);
     start_state->as<ompl::base::SE2StateSpace::StateType>()->setY(turtle_start.pose.position.y);   
-   start_state->as<ompl::base::SE2StateSpace::StateType>()->setYaw(start_yaw);
+    start_state->as<ompl::base::SE2StateSpace::StateType>()->setYaw(start_yaw);
     // ROS_DEBUG_STREAM("Set rrt start state to ( " << turtle_start.pose.position.x << ", " << turtle_start.pose.position.y << ")");
 
     tf::poseMsgToTF(turtle_goal.pose, pose);
