@@ -8,9 +8,9 @@ void RRT::initialize(std::string name, costmap_2d::Costmap2DROS* new_costmap_ros
         private_nh.param("step_size", step_size, costmap->getResolution());
         private_nh.param("min_dist_from_robot", robot_radius, 0.2);
         world_model = new base_local_planner::CostmapModel(*costmap);
-
         plan_pub = private_nh.advertise<nav_msgs::Path>("rrt_plan", 1, true);
         initialized = true;
+        ROS_WARN("Initialized RRT planner!");
     }
     else {
         ROS_WARN("Planner is ready to go. Nothing to initialize.");
@@ -60,6 +60,7 @@ bool RRT::stateIsValid(const ompl::base::State *state) {
     point.y = se2state->getY();
     std::vector<geometry_msgs::Point> footprint;
     footprint.push_back(point);
+    ROS_WARN("in the stateisvalid method now!!");
     double point_cost = world_model->footprintCost(point, footprint, robot_radius, robot_radius);
     return point_cost >= 0;
 }
@@ -86,13 +87,13 @@ bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
 
     ompl::geometric::SimpleSetup ss(si);
 
-    ompl::base::PlannerPtr rrt_star(new ompl::geometric::RRTstar(si));
+    ompl::base::PlannerPtr rrt_star(new ompl::geometric::RRT(si));
     ss.setPlanner(rrt_star);
 
     ompl::base::OptimizationObjectivePtr obj(new ompl::base::PathLengthOptimizationObjective(si));
     ss.setOptimizationObjective(obj);
 
-    ss.setStateValidityChecker(boost::bind(&RRT::stateIsValid, this, _1));
+    //ss.setStateValidityChecker(boost::bind(&RRT::stateIsValid, this, _1));
 
     tf::Pose pose;
     tf::poseMsgToTF(turtle_start.pose, pose);
@@ -100,8 +101,8 @@ bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
     ompl::base::ScopedState<> start_state(space);
     start_state->as<ompl::base::SE2StateSpace::StateType>()->setX(turtle_start.pose.position.x);
     start_state->as<ompl::base::SE2StateSpace::StateType>()->setY(turtle_start.pose.position.y);   
-    start_state->as<ompl::base::SE2StateSpace::StateType>()->setYaw(start_yaw);
-    ROS_DEBUG_STREAM("Set rrt start state to ( " << turtle_start.pose.position.x << ", " << turtle_start.pose.position.y << ", " << start_yaw << ")");
+   start_state->as<ompl::base::SE2StateSpace::StateType>()->setYaw(start_yaw);
+    // ROS_DEBUG_STREAM("Set rrt start state to ( " << turtle_start.pose.position.x << ", " << turtle_start.pose.position.y << ")");
 
     tf::poseMsgToTF(turtle_goal.pose, pose);
     double goal_yaw = tf::getYaw(pose.getRotation());
@@ -109,13 +110,13 @@ bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
     goal_state->as<ompl::base::SE2StateSpace::StateType>()->setX(turtle_goal.pose.position.x);
     goal_state->as<ompl::base::SE2StateSpace::StateType>()->setY(turtle_goal.pose.position.y);
     goal_state->as<ompl::base::SE2StateSpace::StateType>()->setYaw(goal_yaw);
-    ROS_DEBUG_STREAM("Set rrt goal state to ( " << turtle_goal.pose.position.x << ", " << turtle_goal.pose.position.y << ", " << goal_yaw << ")");
+    // ROS_DEBUG_STREAM("Set rrt goal state to ( " << turtle_goal.pose.position.x << ", " << turtle_goal.pose.position.y << ")");
     ss.setStartAndGoalStates(start_state, goal_state);
 
     ss.setup();
     ss.print();
 
-    ompl::base::PlannerStatus solved = ss.solve(10.0);
+    ompl::base::PlannerStatus solved = ss.solve(2);
     if (solved) {
         ROS_INFO("Found RRT solution:");
         ss.simplifySolution();
@@ -124,10 +125,10 @@ bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
         nav_msgs::Path turtle_soln = extractNavPath(planner_soln);
         geometry_msgs::PoseStamped temp_pose;
         for (unsigned i = 0; i < turtle_soln.poses.size(); i++) {
-            ros::Time plan_time = ros::Time::now();
-            temp_pose.header.stamp = plan_time;
             temp_pose.header.frame_id = costmap_ros->getGlobalFrameID();
             temp_pose.pose = turtle_soln.poses[i].pose;
+            ros::Time plan_time = ros::Time(0);
+            temp_pose.header.stamp = plan_time;
             plan.push_back(temp_pose);
         }
         plan_pub.publish(turtle_soln);

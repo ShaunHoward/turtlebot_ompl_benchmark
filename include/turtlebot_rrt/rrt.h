@@ -13,14 +13,14 @@
 #include <nav_msgs/Path.h>
 #include <occupancy_grid_utils/coordinate_conversions.h>
 #include <occupancy_grid_utils/shortest_path.h>
+#include <ompl/base/SpaceInformation.h>
 #include <ompl/base/State.h>
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
-#include <ompl/base/SpaceInformation.h>
 #include <ompl/base/spaces/SE2StateSpace.h>
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/rrt/RRT.h>
-#include <ompl/geometric/planners/rrt/RRTstar.h>
+#include <ompl/geometric/planners/prm/PRMstar.h>
 #include <pluginlib/class_list_macros.h>
 #include <tf/tf.h>
 
@@ -94,7 +94,7 @@ RRT::RRT() :
         min_y(std::numeric_limits<int>::max()) {
     ROS_INFO("Initializing RRT for Turtlebot");
     initializeSubscribers();
-    ROS_INFO("RRT ready");
+    ROS_INFO("RRT not constructed with costmap");
 }
 
 RRT::RRT(std::string name, costmap_2d::Costmap2DROS* new_costmap_ros) :
@@ -111,7 +111,7 @@ RRT::RRT(std::string name, costmap_2d::Costmap2DROS* new_costmap_ros) :
     ROS_INFO("Initializing RRT for Turtlebot");
     initializeSubscribers();
     initialize(name, new_costmap_ros);
-    ROS_INFO("RRT ready");
+    ROS_INFO("RRT ready with costmap");
 }
 
 nav_msgs::OccupancyGrid::Ptr RRT::getInflatedMap(){
