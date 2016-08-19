@@ -26,6 +26,6 @@ include_directories(
     ${OMPL_INCLUDE_DIRS}
 )
 
-add_library(rrt_lib src/rrt.cpp)
+add_library(rrt_lib src/rrt_benchmark.cpp)
 
 target_link_libraries(rrt_lib ${catkin_LIBRARIES} ${OMPL_LIBRARIES})
