@@ -130,7 +130,6 @@ CATKIN_IGNORE
 *.aux
 *.log
 *.synctex.gz
-*.tex
 *.pdf
 *.bbl
 *.bcf
