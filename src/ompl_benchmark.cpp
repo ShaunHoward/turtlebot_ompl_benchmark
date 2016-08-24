@@ -1,7 +1,7 @@
-#include <turtlebot_rrt/rrt.h>
+#include <ompl_benchmark/benchmark.h>
 #include "ompl/tools/benchmark/Benchmark.h"
 
-void RRT::initialize(std::string name, costmap_2d::Costmap2DROS* new_costmap_ros) {
+void OMPLBenchmarkPlanner::initialize(std::string name, costmap_2d::Costmap2DROS* new_costmap_ros) {
     if (!initialized) {
         costmap_ros = new_costmap_ros;
         costmap = costmap_ros->getCostmap();
@@ -9,16 +9,16 @@ void RRT::initialize(std::string name, costmap_2d::Costmap2DROS* new_costmap_ros
         private_nh.param("step_size", step_size, costmap->getResolution());
         private_nh.param("min_dist_from_robot", robot_radius, 0.2);
         world_model = new base_local_planner::CostmapModel(*costmap);
-        plan_pub = private_nh.advertise<nav_msgs::Path>("rrt_plan", 1, true);
+        plan_pub = private_nh.advertise<nav_msgs::Path>("OMPLBenchmarkPlanner_plan", 1, true);
         initialized = true;
-        ROS_WARN("Initialized RRT planner!");
+        ROS_WARN("Initialized OMPLBenchmarkPlanner planner!");
     }
     else {
         ROS_WARN("Planner is ready to go. Nothing to initialize.");
     }
 }
 
-void RRT::mapCallback(nav_msgs::OccupancyGrid latest_map){
+void OMPLBenchmarkPlanner::mapCallback(nav_msgs::OccupancyGrid latest_map){
     if (map_found) {
         ROS_WARN("Map updates found without previous updates applied...");
     }
@@ -44,17 +44,17 @@ void RRT::mapCallback(nav_msgs::OccupancyGrid latest_map){
     }
 }
 
-void RRT::amclPoseCallback(geometry_msgs::PoseWithCovarianceStamped new_pose) {
+void OMPLBenchmarkPlanner::amclPoseCallback(geometry_msgs::PoseWithCovarianceStamped new_pose) {
     amcl_pose = new_pose.pose.pose;
     pose_found = true;
 }
 
-void RRT::initializeSubscribers() {
-    map_sub = nh.subscribe("map", 1, &RRT::mapCallback, this);
-    amcl_pose_sub = nh.subscribe("amcl_pose", 1, &RRT::amclPoseCallback, this);
+void OMPLBenchmarkPlanner::initializeSubscribers() {
+    map_sub = nh.subscribe("map", 1, &OMPLBenchmarkPlanner::mapCallback, this);
+    amcl_pose_sub = nh.subscribe("amcl_pose", 1, &OMPLBenchmarkPlanner::amclPoseCallback, this);
 }
 
-bool RRT::stateIsValid(const ompl::base::State *state) {
+bool OMPLBenchmarkPlanner::stateIsValid(const ompl::base::State *state) {
     const ompl::base::SE2StateSpace::StateType *se2state = state->as<ompl::base::SE2StateSpace::StateType>();
     geometry_msgs::Point point;
     point.x = se2state->getX();
@@ -63,10 +63,13 @@ bool RRT::stateIsValid(const ompl::base::State *state) {
     footprint.push_back(point);
     ROS_WARN("in the stateisvalid method now!!");
     double point_cost = world_model->footprintCost(point, footprint, robot_radius, robot_radius);
+    if (point_cost < 0) {
+        ROS_WARN("point cost less than 0.. not valid point");
+    }
     return point_cost >= 0;
 }
 
-bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
+bool OMPLBenchmarkPlanner::makePlan(const geometry_msgs::PoseStamped& turtle_start,
                   const geometry_msgs::PoseStamped& turtle_goal,
                   std::vector<geometry_msgs::PoseStamped>& plan) {
 
@@ -91,7 +94,7 @@ bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
     ompl::base::OptimizationObjectivePtr obj(new ompl::base::PathLengthOptimizationObjective(si));
     ss.setOptimizationObjective(obj);
 
-    //ss.setStateValidityChecker(boost::bind(&RRT::stateIsValid, this, _1));
+    ROS_INFO("out of state validity check method");
 
     tf::Pose pose;
     tf::poseMsgToTF(turtle_start.pose, pose);
@@ -114,21 +117,25 @@ bool RRT::makePlan(const geometry_msgs::PoseStamped& turtle_start,
 	ompl::base::PlannerPtr rrt(new ompl::geometric::LazyRRT(si));
     ss.setPlanner(rrt);
 
+    //ss.setStateValidityChecker(std::bind(&OMPLBenchmarkPlanner::stateIsValid, this, std::placeholders::_1));
+
     ss.setup();
 
-    //ss.setup();
     ss.print();
 
     //do planner benchmark
-	ompl::tools::Benchmark b(ss, "rrt benchmark");
-	b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::LazyPRM(ss.getSpaceInformation())));
+	ompl::tools::Benchmark b(ss, "geometric_planner_benchmark");
+    
 	b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::RRT(ss.getSpaceInformation())));
     b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::RRTstar(ss.getSpaceInformation())));
 	b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::LazyRRT(ss.getSpaceInformation())));
+    b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::PRM(ss.getSpaceInformation())));
+    b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::LazyPRM(ss.getSpaceInformation())));
 	b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::SPARS(ss.getSpaceInformation())));
 	b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::SPARStwo(ss.getSpaceInformation())));
 	b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::FMT(ss.getSpaceInformation())));
 	b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::PDST(ss.getSpaceInformation())));
+    b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::STRIDE(ss.getSpaceInformation())));
 
 	ompl::tools::Benchmark::Request req;
 	req.maxTime = 5.0;

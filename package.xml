@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>turtlebot_rrt</name>
+  <name>turtlebot_ompl_benchmark</name>
   <version>0.0.0</version>
-  <description>The turtlebot_rrt package</description>
+  <description>The turtlebot_ompl_benchmark package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
@@ -51,6 +51,6 @@
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
-    <nav_core plugin="${prefix}/rrt_plugin.xml"/>
+    <nav_core plugin="${prefix}/omplbenchmarkplanner_plugin.xml"/>
   </export>
 </package>

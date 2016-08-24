@@ -14,5 +14,5 @@
   </include>
 
   <!-- Move base -->
-  <include file="$(find turtlebot_rrt)/launch/includes/move_base.launch.xml"/>
+  <include file="$(find turtlebot_ompl_benchmark)/launch/includes/move_base.launch.xml"/>
 </launch>

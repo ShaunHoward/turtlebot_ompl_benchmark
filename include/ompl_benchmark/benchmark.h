@@ -1,5 +1,5 @@
-#ifndef TURTLEBOT_RRT_RRT_H
-#define TURTLEBOT_RRT_RRT_H
+#ifndef OMPL_BENCHMARK_BENCHMARK_H
+#define OMPL_BENCHMARK_BENCHMARK_H
 
 #include <ros/ros.h>
 
@@ -22,11 +22,7 @@
 #include <ompl/geometric/planners/rrt/RRT.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <ompl/geometric/planners/rrt/LazyRRT.h>
-#include <ompl/geometric/planners/rrt/BiTRRT.h>
-#include <ompl/geometric/planners/rrt/LazyLBTRRT.h>
-#include <ompl/geometric/planners/rrt/LBTRRT.h>
-#include <ompl/geometric/planners/rrt/pRRT.h>
-#include <ompl/geometric/planners/rrt/RRTConnect.h>
+#include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/geometric/planners/prm/LazyPRM.h>
 #include <ompl/geometric/planners/prm/SPARS.h>
 #include <ompl/geometric/planners/prm/SPARStwo.h>
@@ -38,10 +34,10 @@
 #include <tf/tf.h>
 
 
-class RRT : public nav_core::BaseGlobalPlanner {
+class OMPLBenchmarkPlanner : public nav_core::BaseGlobalPlanner {
 public:
-    RRT();
-    RRT(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
+    OMPLBenchmarkPlanner();
+    OMPLBenchmarkPlanner(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
 
     void initialize(std::string name, costmap_2d::Costmap2DROS* costmap_ros);
     bool makePlan(const geometry_msgs::PoseStamped& start,
@@ -93,7 +89,7 @@ geometry_msgs::Quaternion convertPlanarPhiToQuaternion(double phi) {
     return quaternion;
 }
 
-RRT::RRT() :
+OMPLBenchmarkPlanner::OMPLBenchmarkPlanner(std::string name, costmap_2d::Costmap2DROS* new_costmap_ros) :
         costmap_ros(NULL),
         map_found(false),
         pose_found(false),
@@ -105,33 +101,34 @@ RRT::RRT() :
         max_y(std::numeric_limits<int>::min()),
         min_x(std::numeric_limits<int>::max()),
         min_y(std::numeric_limits<int>::max()) {
-    ROS_INFO("Initializing RRT for Turtlebot");
+    ROS_INFO("Initializing OMPLBenchmarkPlanner for Turtlebot");
     initializeSubscribers();
-    ROS_INFO("RRT not constructed with costmap");
+    initialize(name, new_costmap_ros);
+    ROS_INFO("OMPLBenchmarkPlanner ready with costmap");
 }
 
-RRT::RRT(std::string name, costmap_2d::Costmap2DROS* new_costmap_ros) :
+OMPLBenchmarkPlanner::OMPLBenchmarkPlanner() :
         costmap_ros(NULL),
         map_found(false),
         pose_found(false),
         initialized(false),
+        robot_radius(0.2),
         unknown_okay(false),
         occupied_threshold(50),
         max_x(std::numeric_limits<int>::min()),
         max_y(std::numeric_limits<int>::min()),
         min_x(std::numeric_limits<int>::max()),
         min_y(std::numeric_limits<int>::max()) {
-    ROS_INFO("Initializing RRT for Turtlebot");
+    ROS_INFO("Initializing OMPLBenchmarkPlanner for Turtlebot");
     initializeSubscribers();
-    initialize(name, new_costmap_ros);
-    ROS_INFO("RRT ready with costmap");
+    ROS_INFO("OMPLBenchmarkPlanner not constructed with costmap");
 }
 
-nav_msgs::OccupancyGrid::Ptr RRT::getInflatedMap(){
+nav_msgs::OccupancyGrid::Ptr OMPLBenchmarkPlanner::getInflatedMap(){
     return inflated_map;
 }
 
-nav_msgs::Path RRT::extractNavPath(ompl::geometric::PathGeometric ompl_path) {
+nav_msgs::Path OMPLBenchmarkPlanner::extractNavPath(ompl::geometric::PathGeometric ompl_path) {
     nav_msgs::Path ros_path;
     ros_path.header.frame_id = "map";
     std::vector<ompl::base::State*> ompl_states = ompl_path.getStates();
@@ -147,6 +144,6 @@ nav_msgs::Path RRT::extractNavPath(ompl::geometric::PathGeometric ompl_path) {
 }
 
 /* Register in navstack */
-PLUGINLIB_EXPORT_CLASS(RRT, nav_core::BaseGlobalPlanner)
+PLUGINLIB_EXPORT_CLASS(OMPLBenchmarkPlanner, nav_core::BaseGlobalPlanner)
 
-#endif //TURTLEBOT_RRT_RRT_H
+#endif //OMPL_BENCHMARK_BENCHMARK_H

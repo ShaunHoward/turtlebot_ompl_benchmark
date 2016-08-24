@@ -1,0 +1,5 @@
+<library path="lib/libomplbenchmarkplanner_lib">
+    <class name="OMPLBenchmarkPlanner" type="OMPLBenchmarkPlanner" base_class_type="nav_core::BaseGlobalPlanner">
+        <description>A plugin for OMPL Benchmark planner.</description>
+    </class>
+</library>

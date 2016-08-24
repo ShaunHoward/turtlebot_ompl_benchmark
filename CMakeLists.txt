@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(turtlebot_rrt)
+project(turtlebot_ompl_benchmark)
 
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra")
@@ -26,6 +26,6 @@ include_directories(
     ${OMPL_INCLUDE_DIRS}
 )
 
-add_library(rrt_lib src/rrt_benchmark.cpp)
+add_library(omplbenchmarkplanner_lib src/ompl_benchmark.cpp)
 
-target_link_libraries(rrt_lib ${catkin_LIBRARIES} ${OMPL_LIBRARIES})
+target_link_libraries(omplbenchmarkplanner_lib ${catkin_LIBRARIES} ${OMPL_LIBRARIES})

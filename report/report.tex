@@ -70,19 +70,25 @@ A straightforward way to test these algorithms and others would be to implement 
 of the Open Motion Planning Library (OMPL), as described by Șucan, Moll, and Kavraki in \cite{ompl}. The OMPL has several implementations of motion planning algorithms 
 including those mentioned above. The OMPL Benchmark library, as presented in \cite{ompl_benchmark}, will be useful for benchmarking those algorithms and acquiring the
 data necessary for benchmark comparison. The benchmark library will run each algorithm on each of the problem descriptions from start to goal locations. 
-Experiments can thus be chained together to tremendously speed up benchmarking. 
+Experiments can thus be chained together to tremendously speed up benchmarking.
 
-The turtlebot simulator is an appropriate simulator model for OMPL benchmarking purposes. The turtlebot simulator environment and costmap are display in figure 1. 
-Autonomous driving is a large focus in motion planning today and the turtlebot leans closer to the driving aspect of motion planning than does a humanoid-type simulation. 
-Given the simplicity of physical turtlebot set-up, it will be highly generalizable to test on a robot that is common and easy to set-up for modern consumers. It will also 
-be appropriate to constraint motion plans based on differential constraints of the turtlebot, as most vehicles similarly have. Overall, the AMCL planner with a generated 
-map of a test turtlebot environment will be used for robot localization benchmarking purposes. The map will be represented to the robot by means of a 2-dimensional 
-costmap, generated primarily by the dynamic window approach (DWA) planner provided by ROS. The DWA implemented by ROS is based on the methodology proposed by D. Fox, W. 
-Burgard, and S. Thrun. in \cite{dwa}. The benchmarking planner will inherit properties from the BaseGlobalPlanner provided by ROS in order to act as a true motion 
-planning plug-in for compatibility with components of the ROS motion planning framework like the Rviz robot interaction and visualization application.
+The turtlebot simulator is an appropriate simulator model for OMPL benchmarking purposes. A two-dimensional costmap of the environment surroundings of the Turtlebot
+will be utilized as provided by ROS and Clearpath Robotics in the occupancy_grid_utils and costmap_2d libraries for C++. The turtlebot simulator environment and costmap 
+are display in figure 1. Autonomous driving is a large focus in motion planning today and the turtlebot leans closer to the driving aspect of motion planning than does a 
+humanoid-type simulation. Given the simplicity of physical turtlebot set-up, it will be highly generalizable to test on a robot that is common and easy to set-up for 
+modern consumers. It will also be appropriate to constraint motion plans based on differential constraints of the turtlebot, as most vehicles similarly have. Overall, the 
+AMCL planner with a generated map of a test turtlebot environment will be used for robot localization benchmarking purposes. The map will be represented to the robot by 
+means of a 2-dimensional costmap, generated primarily by the dynamic window approach (DWA) planner provided by ROS. The DWA implemented by ROS is based on the 
+methodology proposed by D. Fox, W. Burgard, and S. Thrun. in \cite{dwa}. The benchmarking planner will inherit properties from the BaseGlobalPlanner provided by ROS in 
+order to act as a true motion planning plug-in for compatibility with components of the ROS motion planning framework like the Rviz robot interaction and visualization 
+application.
 
-The next sections describe the algorithms, outline their pros and cons, employ them in benchmark test scenarios and compare their experimentation results using 
-statistical analysis.
+The next sections describe background information for the problem domain, the algorithms available via OMPL for the planning tasks, their pros and cons, their benchmark 
+test experiments and results and comparison using statistical analysis.
+
+\section{Background Information} \label{Background Information}
+
+<FILL IN WHAT OPTIMALITY, PROB COMPLETENESS, MEMORY CONSTRAINTS MEAN> RRT* paper has definitions in analysis
 
 \section{Planning Algorithms} \label{Planning Algorithms}
 
@@ -136,14 +142,8 @@ The cons of the RRT* algorithm follow:
 The lazy RRT is a rendition of the RRT that explores only part of the random tree that is necessary to solve the current query. It was first introduced by R. Bohlin and 
 L. Kavraki in \cite{lazy_rrt}. The lazy RRT is an RRT optimized for single-query, high-dimensional, uncluttered, global configuration spaces. The lazy RRT aims to 
 minimize the number of collision checks performed during the RRT planning process. This addition to the RRT makes for a more efficient implementation of the RRT that has 
-a better runtime in the general case. The pseudocode for the LazyRRT algorithm is displayed in figure 4.
-
-\begin{figure}
-\label{figure4} 
-\centering 
-\includegraphics[width=0.49\textwidth]{lazy_rrt}
-\caption{LazyRRT pseudocode}
-\end{figure}
+a better runtime in the general case. Pseudocode for the LazyRRT is omitted for brevity purposes. The C++ namespace reference in OMPL is ompl::geometric::LazyRRT for
+the algorithm implementation application programming interface (API).
 
 The good features of the LazyRRT are:
 -speedup from reduced collision checking
@@ -157,13 +157,13 @@ The bad features of the LazyRRT are:
 The probabilistic roadmap was first released the to the public in 1996 with \cite{prm}. The goal was to build a map of possible nodes to visit amongst the obstacles in 
 the environment. The algorithm is based on a static map of the robot's environment. The planner has two phases: a learning and a query phase. The nodes represent 
 collision-free robot configurations, while the edges represent clear paths to travel between those nodes. The PRM is known to excel with the help of a local planner like 
-the ROS DWA planner that will be used in this benchmark. The algorithm pseudocode is presented in figure 5.
+the ROS DWA planner that will be used in this benchmark. The construction algorithm pseudocode is presented in figure 4.
 
 \begin{figure}
-\label{figure5} 
+\label{figure4} 
 \centering 
 \includegraphics[width=0.49\textwidth]{prm}
-\caption{PRM pseudocode}
+\caption{PRM construction phase pseudocode}
 \end{figure}
 
 The pros of the PRM:
@@ -180,13 +180,13 @@ The cons of the PRM:
 The lazy PRM is an enhanced version of the PRM that lazily checks for collisions. The lazy PRM was described as an enhancement to the PRM in \cite{lazy_prm}. Initially, 
 the planner assumes that all randomly-generated configurations are collision-free. Once nodes or edges with collisions are found, they are removed from the roadmap and
 new nodes and/or edges are generated and inserted. This process is repeated until a collision-free solution is found. The theme of the planner is to minimize the number
-of collision checks needed to reach a goal. The pseudcode of the LazyPRM is shown in figure 6.
+of collision checks needed to reach a goal. The high-level overview of the LazyPRM is shown in figure 5.
 
 \begin{figure}
-\label{figure6} 
+\label{figure5} 
 \centering 
 \includegraphics[width=0.49\textwidth]{lazy_prm}
-\caption{LazyPRM pseudocode}
+\caption{LazyPRM overview}
 \end{figure}
 
 The pros of the LazyPRM:
@@ -205,10 +205,10 @@ the desired state of optimality, the SPARS algorithm satisfies near-optimality, 
 PRM planners, while benefiting from the same upsides of the PRM approaches. After smoothing, paths are found to be much shorter than paths developed by other algorithms.
 
 The SPARS planner provides probabilistic completeness and near asymptotic optimality by building two graphs in parallel. The first graph is a dense asymptotically-optimal
-PRM*-based roadmap and the second graphs is the spanner of the first graph. The SPARS pseudocode can be found in figure 7.
+PRM*-based roadmap and the second graphs is the spanner of the first graph. The SPARS pseudocode can be found in figure 6.
 
 \begin{figure}
-\label{figure7} 
+\label{figure6} 
 \centering 
 \includegraphics[width=0.49\textwidth]{spars}
 \caption{SPARS pseudocode}
@@ -231,12 +231,12 @@ The SPARS2 planner was introduced as a simplification of the SPARS algorithm in 
 completeness and near-optimality criteria, the SPARS2 planner reveals it is possible to relax the sampling conditions without using a dense graph. Desirable properties
 of the SPARS algorithm are maintained in SPARS2, such as the decrease in probability to zero of adding new nodes to the roadmap over time. The SPARS2 algorithm
 generates graphs that are orders of magnitude smaller than the PRM*-based solutions. Hence, the SPARS2 algorithm is competitively performant between the other sampling-
-based approaches to path planning. The SPARS2 pseudocode can be found in figure 8.
+based approaches to path planning. The SPARS2 pseudocode can be found in figure 7.
 
 \begin{figure}
-\label{figure8} 
+\label{figure7} 
 \centering 
-\includegraphics[width=0.49\textwidth]{spars_two}
+\includegraphics[width=0.49\textwidth]{spars2}
 \caption{SPARS2 pseudocode}
 \end{figure}
 
@@ -252,10 +252,10 @@ The PDST planner was designed specifically for systems with inherent drift, unde
 approach and path-directed subdivision to solve complex planning problems. The approach was proposed and applied in \cite{pdst} to the game Koules, which exhibits 
 dynamical characteristics of complex motion planning problems. The algorithm was applied to scenarios with up to 85 dimensions, but obviously suffered from
 memory overhead issues. Hence, the PDST is slower as memory size grows due to usage of hard disk page file and other hardware limitations, but the algorithm
-should be applicable to a lower dimensional motion planning problem as for the turtlebot benchmark scenarios in this paper. The pseudocode for the algorithm is displayed in figure 9.
+should be applicable to a lower dimensional motion planning problem as for the turtlebot benchmark scenarios in this paper. The pseudocode for the algorithm is displayed in figure 8.
 
 \begin{figure}
-\label{figure9} 
+\label{figure8} 
 \centering 
 \includegraphics[width=0.49\textwidth]{pdst}
 \caption{PDST pseudocode}
@@ -280,10 +280,10 @@ strategy to grow a tree of paths from a preselected number of probabilistically-
 query path planners. It is influenced by the Fast Marching Method for solving Eikonal equations. It is described in \cite{fmt_star} and analyzed under the
 notion of probability of convergence rather than analysis of sure converge like other planners. The convergence rate is bounded in big-O time and the algorithm
 is found to be asymptotically-optimal even with various factors such as non-uniformly sampled nodes. The algorithm is found to generate much better solutions
-that its RRT and PRM counterparts mostly in higher-dimensional configuration spaces or where collision-checking is inefficient. In figure 10 is the FMT* pseudocode.
+that its RRT and PRM counterparts mostly in higher-dimensional configuration spaces or where collision-checking is inefficient. In figure 9 is the FMT* pseudocode.
 
 \begin{figure}
-\label{figure10} 
+\label{figure9} 
 \centering 
 \includegraphics[width=0.49\textwidth]{fmt_star}
 \caption{FMT* pseudocode}
@@ -299,7 +299,6 @@ The beneficial aspects of the FMT* algorithm are the following:
 The detrimental aspects of the FMT* algorithm are the following:
 -only nearly optimal with obstacles
 
-
 \subsection{Search Tree with Resolution Independent Density Estimation} \label{STRIDE}
 The STRIDE algorithm was designed to support rapidly-exploring path planning in high-dimensional space with over 10 dimensions. The algorithm was first introduced
 in \cite{stride}. The algorithm is mostly parameter-free due to the utilization of a Geometric Near-neighbor access tree (GNAT) to estimate the sampling density of the 
@@ -307,10 +306,10 @@ configuration space. This results in an implicitly resolution-independent Vorono
 naturally to unexplored regions of configuration space. STRIDE is also capable of exploring the full dimensionality of the search space given that GNAT only requires a 
 valid distance metric. Results in \cite{stride} show that the algorithm performs much better than others like the RRT and PRM when the search space is defined
 by narrow passageways. Thus, the algorithm seems an appropriate match for a motion planning problem where tight passageways are common as in autonomous navigation.
-Pseudocode for the algorithm is displayed in figure 11.
+Pseudocode for the algorithm is displayed in figure 10.
 
 \begin{figure}
-\label{figure2} 
+\label{figure10} 
 \centering 
 \includegraphics[width=0.49\textwidth]{stride}
 \caption{STRIDE pseudocode}
@@ -330,16 +329,87 @@ The worst features of the STRIDE algorithm are:
 -not guaranteed optimal
 -not guaranteed probabilistically complete
 
-
 \section{Benchmark Scenarios} \label{Benchmark Scenarios}
+
+Three benchmark scenarios will be examined between all of the algorithms. Given the differing structures between some of the algorithms, they do not all
+have consistent data collection from the OMPL Benchmark library, but many of them align on given output information about the algorithm useful for benchmarking
+and comparison. From the acquired data, we will then determine the best choice algorithm for each planning scenario. The first scenario will be when there is clearly a 
+collision-free path from start to finish along the map. The second scenario will include a sparse area of objects that obscure the vision between the turtlebot and 
+the goal but are not too confusing for the path planner. The third scenario will consist of a path through several objects in a dense mapping of objects along the map. 
+The goal will not directly be visible from the turtlebot starting location, nor will it be too easy to find without utilizing the environment cost map.
+
+For each of the benchmark scenarios, rules will be set across the board. Each planner will be run 5 times with 100 mb maximum memory. Each planner will be allowed 5 seconds 
+per run before being terminated. The planners will not be operated in a multi-threaded fashion. The planners will each be run with their default parameters. Some planners 
+will be able to produce approximate solutions and/or optimize solutions while others will not based on OMPL implementation. Solutions will be simplified using OMPL Simple 
+Setup procedures, and the time to simplify each planner's path will be recorded. The workspace will be bounded by the environment map in all benchmarks. The planners 
+will be optimized to seek short path length. The benchmark scenarios and results follow.
 
 \subsection{Obstacle-Free Path} \label{Obstacle-free Path}
 
+The obstacle-free portion of the map utilized for the first benchmarking scenario is show in figure 11. This scenario is useful for determining which planner is the
+best for clear path planning without obscurities.
+
+\begin{figure}
+\label{figure11} 
+\centering 
+\includegraphics[width=0.49\textwidth]{scenario_1}
+\caption{Obstacle-free path-planning scenario}
+\end{figure}
+
+The important graphs of algorithms during this run are tiled in figure 12. 
+
+\begin{figure}
+\label{figure12} 
+\centering 
+\includegraphics[width=0.49\textwidth]{s1_outcomes}
+\caption{Obstacle-free scenario outcomes}
+\end{figure}
+
 \subsection{Sparse Obstacle Map} \label{Sparse Obstacle Map}
+
+The sparse obstacle portion of the map utilized for the second benchmarking scenario is displayed in figure 13. This scenario is useful for determining which planner is 
+the best choice for path planning with sparsely laid obscurities in the path from start to goal. The planner will start from a location of the turtlebot that cannot see
+the goal. The environment between the turtlebot and the goal will be straightforward to draw a path from a top-down 2-D view.
+
+\begin{figure}
+\label{figure13} 
+\centering 
+\includegraphics[width=0.49\textwidth]{scenario_2}
+\caption{Sparse obstacle path-planning scenario}
+\end{figure}
+
+The important graphs of algorithms during this run are tiled in figure 14. 
+
+\begin{figure}
+\label{figure14} 
+\centering 
+\includegraphics[width=0.49\textwidth]{s2_outcomes}
+\caption{Sparse obstacle scenario outcomes}
+\end{figure}
 
 \subsection{Dense Obstacle Map} \label{Dense Obstacle Map}
 
+The more dense obstacle portion of the map utilized for the third benchmarking scenario is displayed in figure 15. This scenario is useful for determining which planner is 
+the best choice for path planning with densely laid obscurities encountered along the path from start to goal.
+
+\begin{figure}
+\label{figure15} 
+\centering 
+\includegraphics[width=0.49\textwidth]{scenario_3}
+\caption{Dense obstacle path-planning scenario}
+\end{figure}
+
+The important graphs of algorithms during this run are tiled in figure 16. 
+
+\begin{figure}
+\label{figure16} 
+\centering 
+\includegraphics[width=0.49\textwidth]{s3_outcomes}
+\caption{Dense obstacle scenario outcomes}
+\end{figure}
+
 \section{Benchmark Comparisons} \label{Benchmark Comparison}
+
 
 \subsection{Efficiency Comparisons} \label{Efficiency Comparisons}
 
