@@ -338,10 +338,10 @@ collision-free path from start to finish along the map. The second scenario will
 the goal but are not too confusing for the path planner. The third scenario will consist of a path through several objects in a dense mapping of objects along the map. 
 The goal will not directly be visible from the turtlebot starting location, nor will it be too easy to find without utilizing the environment cost map.
 
-For each of the benchmark scenarios, rules will be set across the board. Each planner will be run 5 times with 100 mb maximum memory. Each planner will be allowed 5 seconds 
-per run before being terminated. The planners will not be operated in a multi-threaded fashion. The planners will each be run with their default parameters. Some planners 
-will be able to produce approximate solutions and/or optimize solutions while others will not based on OMPL implementation. Solutions will be simplified using OMPL Simple 
-Setup procedures, and the time to simplify each planner's path will be recorded. The workspace will be bounded by the environment map in all benchmarks. The planners 
+For each of the benchmark scenarios, rules will be set across the board. Each planner will be run 5 times with 500 megabytes maximum memory. Each planner will be allowed 5 
+seconds per run before being terminated. The planners will not be operated in a multi-threaded fashion. The planners will each be run with their default parameters. Some 
+planners will be able to produce approximate solutions and/or optimize solutions while others will not based on OMPL implementation. Solutions will be simplified using OMPL 
+Simple Setup procedures, and the time to simplify each planner's path will be recorded. The workspace will be bounded by the environment map in all benchmarks. The planners 
 will be optimized to seek short path length. The benchmark scenarios and results follow.
 
 \subsection{Obstacle-Free Path} \label{Obstacle-free Path}
@@ -356,7 +356,24 @@ best for clear path planning without obscurities.
 \caption{Obstacle-free path-planning scenario}
 \end{figure}
 
-The important graphs of algorithms during this run are tiled in figure 12. 
+The important graphs of algorithms during this run are tiled in figure 12. From the results we reflect that all planners were able to find an exact solution
+for this planning problem. The planners in order from minimum to maximum number of iterations were the following: SPARS, SPARS2, LazyRRT, PRM, and RRT*. Surprisingly, the 
+planner that took the least number of iterations to determine the exact solution was the SPARS planner at approximately 3000 iterations on average. This planner 
+performed orders of magnitude faster than the RRT* and PRM-based planners, which each took at least 30,000 iterations on average. The SPARS2 planner took about 800
+iterations on average, and the LazyPRM planner took about 20000 iterations to converge on average.
+
+Continuing, we observe that a trend similar to the iteration count trend was developed for the amount of time taken by the planners to find the exact solution. 
+The order of planners from minimum time taken to maximum time taken is the following: FMT*, SPARS, SPARS2, LazyPRM, RRT*, and PRM. We can see there is slight 
+difference in trend between iteration count and runtime since the PRM took more time than the RRT* to solve the problem on average. The other planners were ommitted from
+this benchmark since they do not support the same interface as the planners whose data was gathered.
+
+Analysing the solutions produced by the planners, we can determine which planners produced smoother solutions, which planners produced shorter solutions, which
+planners yielded solutions that had more segments or direction changes, and which planner solutions took longer to simplify.
+
+Lastly, we can analyse the amount of memory taken for each algorithm and discuss other factors about the planners. Based on omitted graphs, we determine that the
+LazyPRM has many less edges, 450,000 on average vs. 90,000 on average. The LazyPRM also has a smaller amount of milestones encountered during planning than the
+PRM, i.e. 70,000 on average vs. 18,000 on average. Additionally the LazyPRM edge and milestone count increase over time was a much leaner and slower growing
+curve than that of the standard PRM.
 
 \begin{figure}
 \label{figure12} 

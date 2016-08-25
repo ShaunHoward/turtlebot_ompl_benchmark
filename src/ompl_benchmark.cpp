@@ -63,6 +63,7 @@ bool OMPLBenchmarkPlanner::stateIsValid(const ompl::base::State *state) {
     footprint.push_back(point);
     ROS_WARN("in the stateisvalid method now!!");
     double point_cost = world_model->footprintCost(point, footprint, robot_radius, robot_radius);
+    ROS_WARN("got the point cost, possibly > 0..");
     if (point_cost < 0) {
         ROS_WARN("point cost less than 0.. not valid point");
     }
@@ -91,10 +92,13 @@ bool OMPLBenchmarkPlanner::makePlan(const geometry_msgs::PoseStamped& turtle_sta
 
     ompl::geometric::SimpleSetup ss(si);
 
+    ompl::base::PlannerPtr rrt(new ompl::geometric::LazyRRT(si));
+    ss.setPlanner(rrt);
+
     ompl::base::OptimizationObjectivePtr obj(new ompl::base::PathLengthOptimizationObjective(si));
     ss.setOptimizationObjective(obj);
 
-    ROS_INFO("out of state validity check method");
+    //ss.setStateValidityChecker(boost::bind(&OMPLBenchmarkPlanner::stateIsValid, this, _1));
 
     tf::Pose pose;
     tf::poseMsgToTF(turtle_start.pose, pose);
@@ -114,10 +118,8 @@ bool OMPLBenchmarkPlanner::makePlan(const geometry_msgs::PoseStamped& turtle_sta
     // ROS_DEBUG_STREAM("Set rrt goal state to ( " << turtle_goal.pose.position.x << ", " << turtle_goal.pose.position.y << ")");
     ss.setStartAndGoalStates(start_state, goal_state);
 
-	ompl::base::PlannerPtr rrt(new ompl::geometric::LazyRRT(si));
-    ss.setPlanner(rrt);
 
-    //ss.setStateValidityChecker(std::bind(&OMPLBenchmarkPlanner::stateIsValid, this, std::placeholders::_1));
+    ROS_WARN("out of state validity check method");
 
     ss.setup();
 
@@ -139,7 +141,7 @@ bool OMPLBenchmarkPlanner::makePlan(const geometry_msgs::PoseStamped& turtle_sta
 
 	ompl::tools::Benchmark::Request req;
 	req.maxTime = 5.0;
-	req.maxMem = 100.0;
+	req.maxMem = 500.0;
 	req.runCount = 5;
 	req.displayProgress = true;
 	b.benchmark(req);
