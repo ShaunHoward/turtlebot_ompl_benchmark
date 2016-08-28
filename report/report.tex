@@ -92,23 +92,74 @@ test experiments, results and comparison between the algorithms using OMPL bench
 \section{Background Information} \label{Background Information}
 
 Several aspects of the planners will be evaluated in the benchmarks of this paper. The concepts spanned will include the properties of asymptotic optimality, probabilistic 
-completeness and computation complexity. Each of these properties for the planners that will be benchmarked in this paper will affects its overall performance against
+completeness and computational complexity. Each of these properties for the planners that will be benchmarked in this paper will affects its overall performance against
 the other algorithms. Each of these factors holistically affect planning time, simplification time, solution length, and the number of iterations
 taken by each algorithm to find the best cost path it can. The definitions for each of these algorithms will be discussed next.
 
 \subsection{Probabilistic Completeness} \label{Probabilistic Completeness}
+The probabilistic completeness of an algorithm is defined by the feasibility of the robust path planning problem and whether that problem, constructed with \[(X_{free}, x_{init}, X_{goal}),\] 
+satisfies the limit of the Lim. 1 figure as defined in \cite{rrt_star}.
+
+\begin{figure}
+\label{limit_1} 
+\centering 
+\includegraphics[width=0.49\textwidth]{prob_compl_limit_1}
+\\ Lim. 1: Probabilistic Completeness Limit 1.
+\end{figure}
+
+\begin{figure}
+\label{limit_2} 
+\centering 
+\includegraphics[width=0.49\textwidth]{prob_compl_limit_2}
+\\ Lim. 2: Probabilistic Completeness Limit 2.
+\end{figure}
+
+When the path planning problem satisfies feasibility and robustness constraints, then the limit in the Lim. 2 figure exists.
+For sampling-based algorithms, this limit is equal to 0 when the problem is not robustly feasible. The only way the algorithm could be robustly feasible is when samples 
+have been drawn from a singular distribution customized for the problem at hand. Many algorithms are probabilistically complete such as the RRT, PRM, PDST, SPARS and SPARS2. 
+As discussed in \cite{fmt_star}, having this feature means that the probability that the algorithm will fail to find a solution, if one exists, will decay to zero as the sample 
+count increases toward infinity. In section 4.1 of \cite{rrt_star}, the definition of probabilistic completeness is summarized to the idea that with a high probability the
+algorithm finds a solution to the path planning problems that are robustly feasible. This means the feasible path exists with strong $\delta$-clearance. Algorithms tested in this 
+benchmark will be both probabilistically complete and incomplete. The variants of the RRT and PRM are debatable probabilistically complete as discussed further in \cite{rrt_star}.
 
 \subsection{Asymptotic Optimality} \label{Asymptotic Optimality}
 
+Similarly to the concept of probabilistic completeness, asymptotic optimality relies on a weak notion of $\delta$-clearance as well as a property of continuity that is 
+discussed in section 4.2 of \cite{rrt_star}.  The paper describes path homotopy, collision-free paths with a weak $\delta$-clearance and strong $\delta$-clearance.
+Those with the weak clearance can have uncountably-many points within the collision boundary, so strong clearance is desirable in determining optimal homotopic paths.
+The euclidean distance algorithm with normalization modifications are shown to evaluate the $\delta$ distance of each point from collisions. The definition of a robustly optimal
+solution is given and is specified to have a robustly feasible nature. Following is a more formal representation of asymptotic optimality.
+
+An algorithm is asymptotically optimal if, for the problem constructed via \[(X_{free}, x_{init}, X_{goal}),\] and cost function \[ \text{c : } \Sigma \to {\rm I\!R} _{\ge 0}, \] the algorithm produces a robustly optimal solution with a finite cost c* as defined by
+
+\[{\rm I\!P}(\{\lim_{n\to\infty} sup Y_n^{ALG}=c*\}) = 1.\] 
+
+The asymptotic optimality of ALG implies that the core limit described above does exist and is equal to c*.
+Inherently, asymptotic optimality depends on the algorithm being probabilistically complete. Further, 
+the probability is either 0 or 1 that a sampling-based algorithm converges to an optimal solution. 
+Thus, in benchmarking, if a solution does not find the optimal solution in one scenario, it will likely
+not find the optimal solution in any other scenarios. More factors about optimality are
+discussed further in \cite{rrt_star}.
+
 \subsection{Computational Complexity} \label{Computational Complexity}
+
+Computational complexity is the definition of the difficulty of a given algorithm and a measurement of the
+computational resources that algorithm requires, such as time and storage. A more formal definition is 
+provided in section 4.3 of \cite{rrt_star}. Although the computational complexity is not formally analysed 
+in this paper, it does have an overall affect in the efficiency, memory usage, performance and runtime of 
+each algorithm. These factors drastically affect the responsiveness of the system the algorithm is 
+implemented on. Being that most robotics are based on embedded systems, minimizing the computational 
+complexity of the preferred algorithm in these situations is key.
 
 \section{Planning Algorithms} \label{Planning Algorithms}
 
 \subsection{Rapidly-Exploring Random Tree} \label{RRT}
-The rapidly-exploring random tree algorithm was pioneered by S. LaValle and J. Kuffner around 2000. The RRT was designed to rapidly and randomly explore high-dimensional
-state space in a completely configurable but always sampling-based method. They proved that it is probabilistically complete when they implemented it in their 2001 paper 
-\cite{random_kinodynamics}, where they experiment with an under-actuated spacecraft that performs complex maneuvers amongst other robots and compare the performance 
-results. The pseudocode for the algorithm is displayed in figure 2.
+The rapidly-exploring random tree (RRT) algorithm was pioneered by S. LaValle and J. Kuffner around 2000. The RRT was designed to rapidly and randomly explore high-dimensional
+state space in a completely configurable but always sampling-based method. The method accomplishes this goal by
+randomly building a space-filling tree that has an inherent bias to grow toward unexplored regions.
+It was proven to be probabilistically complete in the 2001 paper \cite{random_kinodynamics}, where LaValle  and Kuffner 
+experiment with an under-actuated spacecraft that performs complex maneuvers amongst other robots and 
+compare the performance results. The pseudocode for the algorithm is displayed in figure 2.
 
 \begin{figure}
 \label{figure2} 
@@ -146,14 +197,14 @@ RRT* algorithm is in figure 3.
 \caption{RRT* pseudocode}
 \end{figure}
 
-The pros of the RRT* algorithm follow:
+The pros of the RRT* algorithm are:
 \begin{itemize}
 \item probabilistically complete
 \item asymptotically optimal
 \item monotone convergence
 \end{itemize}
 
-The cons of the RRT* algorithm follow:
+The cons of the RRT* algorithm are:
 \begin{itemize}
 \item cons of RRT, such as no memory for solutions
 \end{itemize}
@@ -179,7 +230,7 @@ The bad features of the LazyRRT are:
 \end{itemize}
 
 \subsection{Probabilistic Roadmap} \label{PRM}
-The probabilistic roadmap was first released the to the public in 1996 with \cite{prm}. The goal was to build a map of possible nodes to visit amongst the obstacles in 
+The probabilistic roadmap (PRM) was first released the to the public in 1996 with \cite{prm}. The goal was to build a map of possible nodes to visit amongst the obstacles in 
 the environment. The algorithm is based on a static map of the robot's environment. The planner has two phases: a learning and a query phase. The nodes represent 
 collision-free robot configurations, while the edges represent clear paths to travel between those nodes. The PRM is known to excel with the help of a local planner like 
 the ROS DWA planner that will be used in this benchmark. The construction algorithm pseudocode is presented in figure 4.
@@ -231,9 +282,9 @@ The cons of the LazyPRM:
 \end{itemize}
 
 \subsection{SPArse Roadmap Spanner Algorithm} \label{SPARS}
-The SPARS planner is a divergence from the typical sampling-based PRM and heuristically-driven PRM star algorithms. The work in \cite{spars} develops a method of planning 
-that shows finite-size data structures can have close to optimal properties without spanning over as much space as previously integrated PRM* graph spanners. Query
-resolution for the SPARS planner is faster than for mainstream PRM*-based planners. Although most PRM algorithms require the map to grow infinitely large to converge to 
+The SPArse Roadmap Spanner (SPARS) planner is a divergence from the typical sampling-based PRM and heuristically-driven PRM star algorithms. The work in \cite{spars} develops a 
+method of planning that shows finite-size data structures can have close to optimal properties without spanning over as much space as previously integrated PRM* graph spanners. 
+Query resolution for the SPARS planner is faster than for mainstream PRM*-based planners. Although most PRM algorithms require the map to grow infinitely large to converge to 
 the desired state of optimality, the SPARS algorithm satisfies near-optimality, workspace bounds and completeness criteria to generate solutions much faster than typical
 PRM planners, while benefiting from the same upsides of the PRM approaches. After smoothing, paths are found to be much shorter than paths developed by other algorithms.
 
@@ -264,9 +315,9 @@ The cons of the SPARS planner:
 \end{itemize}
 
 \subsection{SPArse Roadmap Spanner Algorithm Two} \label{SPARS2}
-The SPARS2 planner was introduced as a simplification of the SPARS algorithm in \cite{spars_two}. As the SPARS planner uses two graphs to meet probabilistic 
-completeness and near-optimality criteria, the SPARS2 planner reveals it is possible to relax the sampling conditions without using a dense graph. Desirable properties
-of the SPARS algorithm are maintained in SPARS2, such as the decrease in probability to zero of adding new nodes to the roadmap over time. The SPARS2 algorithm
+The SPArse Roadmap Spanner Two (SPARS2) planner was introduced as a simplification of the SPARS algorithm in \cite{spars_two}. As the SPARS planner uses two graphs to meet 
+probabilistic completeness and near-optimality criteria, the SPARS2 planner reveals it is possible to relax the sampling conditions without using a dense graph. Desirable 
+properties of the SPARS algorithm are maintained in SPARS2, such as the decrease in probability to zero of adding new nodes to the roadmap over time. The SPARS2 algorithm
 generates graphs that are orders of magnitude smaller than the PRM*-based solutions. Hence, the SPARS2 algorithm is competitively performant between the other sampling-
 based approaches to path planning. The SPARS2 pseudocode can be found in figure 7.
 
@@ -289,11 +340,18 @@ The downsides of the SPARS2 planner:
 \end{itemize}
 
 \subsection{Path-Directed Subdivision Trees} \label{PDST}
-The PDST planner was designed specifically for systems with inherent drift, under-actuation and discrete changes. The approach utilizes a sampling-based
-approach and path-directed subdivision to solve complex planning problems. The approach was proposed and applied in \cite{pdst} to the game Koules, which exhibits 
-dynamical characteristics of complex motion planning problems. The algorithm was applied to scenarios with up to 85 dimensions, but obviously suffered from
-memory overhead issues. Hence, the PDST is slower as memory size grows due to usage of hard disk page file and other hardware limitations, but the algorithm
-should be applicable to a lower dimensional motion planning problem as for the turtlebot benchmark scenarios in this paper. The pseudocode for the algorithm is displayed in figure 8.
+The Path-Directed Subdivision Trees (PDST) planner was designed specifically for systems with inherent drift, under-actuation and discrete changes. The approach utilizes a 
+sampling-based approach and path-directed subdivision to solve complex planning problems. A method has three changes from typical sampling-based approaches:
+1. Path segments are selected instead of states
+2. Metric properties are not used to prove completeness of the steps nor are metrics used at all
+3. The schedule for segment selection is greedy and deterministic
+
+The approach is built on the features of exploration planning such as using cheap primitives for propagation and using the select-propagate structure for building a tree.
+The approach was proposed and applied in \cite{pdst} to the game Koules, which exhibits dynamical characteristics of complex motion planning problems. The algorithm was applied 
+to scenarios with up to 85 dimensions, but obviously suffered from memory overhead issues. Hence, the PDST is slower as memory size grows due to usage of hard disk page file and 
+other hardware limitations, but the algorithm should be applicable to planning on modern systems or by lowering the dimensionality of the problem using principal component analysis 
+(PCA). PCA would provide several advantages to using the PDST algorithm as the method is fast with less and smaller dimensions. Such combination of algorithms could be a part of 
+future research. The pseudocode for the algorithm is displayed in figure 8.
 
 \begin{figure}
 \label{figure8} 
@@ -302,7 +360,7 @@ should be applicable to a lower dimensional motion planning problem as for the t
 \caption{PDST pseudocode}
 \end{figure}
 
-Good features of the PDST algorithm follow:
+The good features of the PDST algorithm:
 \begin{itemize}
  \item good for severe under-actuation
  \item good for significant drift
@@ -311,7 +369,7 @@ Good features of the PDST algorithm follow:
  \item applicable to systems which are not reducible to a system with lower order dynamics
 \end{itemize}
 
-Bad features of the PDST algorithm follow:
+The bad features of the PDST algorithm:
 \begin{itemize}
  \item high state complexity
  \item requires path sampling representation for efficiency sake
@@ -334,7 +392,7 @@ that its RRT and PRM counterparts mostly in higher-dimensional configuration spa
 \caption{FMT* pseudocode}
 \end{figure}
 
-The beneficial aspects of the FMT* algorithm are the following:
+The beneficial aspects of the FMT* algorithm:
 \begin{itemize}
  \item faster than the PRM*
  \item builds paths in a tree-like structure rather than a graph like PRM
@@ -343,7 +401,7 @@ The beneficial aspects of the FMT* algorithm are the following:
  \item optimal without obstacles
 \end{itemize}
 
-The detrimental aspects of the FMT* algorithm are the following:
+The detrimental aspects of the FMT* algorithm:
 \begin{itemize}
  \item only nearly optimal with obstacles
 \end{itemize}
