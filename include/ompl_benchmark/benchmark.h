@@ -1,3 +1,6 @@
+// author: Shaun Howard (smh150@case.edu)
+// EECS 499 Turtlebot OMPL Geometric Planner Implementation and Benchmark Header
+
 #ifndef OMPL_BENCHMARK_BENCHMARK_H
 #define OMPL_BENCHMARK_BENCHMARK_H
 

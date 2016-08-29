@@ -1,6 +1,10 @@
 # turtlebot_ompl_benchmark
 Path planning with the Turtlebot using various geometric path planning algorithms from OMPL.
 
+# author and maintainer
+
+Shaun Howard
+
 # installation instructions
 - cd ~/projects/ros_ws/src
 - git clone https://github.com/ShaunHoward/turtlebot_ompl_benchmark.git
