@@ -61,12 +61,7 @@ bool OMPLBenchmarkPlanner::stateIsValid(const ompl::base::State *state) {
     point.y = se2state->getY();
     std::vector<geometry_msgs::Point> footprint;
     footprint.push_back(point);
-    ROS_WARN("in the stateisvalid method now!!");
     double point_cost = world_model->footprintCost(point, footprint, robot_radius, robot_radius);
-    ROS_WARN("got the point cost, possibly > 0..");
-    if (point_cost < 0) {
-        ROS_WARN("point cost less than 0.. not valid point");
-    }
     return point_cost >= 0;
 }
 
@@ -92,14 +87,6 @@ bool OMPLBenchmarkPlanner::makePlan(const geometry_msgs::PoseStamped& turtle_sta
 
     ompl::geometric::SimpleSetup ss(si);
 
-    ompl::base::PlannerPtr rrt(new ompl::geometric::LazyRRT(si));
-    ss.setPlanner(rrt);
-
-    ompl::base::OptimizationObjectivePtr obj(new ompl::base::PathLengthOptimizationObjective(si));
-    ss.setOptimizationObjective(obj);
-
-    //ss.setStateValidityChecker(boost::bind(&OMPLBenchmarkPlanner::stateIsValid, this, _1));
-
     tf::Pose pose;
     tf::poseMsgToTF(turtle_start.pose, pose);
     double start_yaw = tf::getYaw(pose.getRotation());
@@ -107,7 +94,7 @@ bool OMPLBenchmarkPlanner::makePlan(const geometry_msgs::PoseStamped& turtle_sta
     start_state->as<ompl::base::SE2StateSpace::StateType>()->setX(turtle_start.pose.position.x);
     start_state->as<ompl::base::SE2StateSpace::StateType>()->setY(turtle_start.pose.position.y);   
     start_state->as<ompl::base::SE2StateSpace::StateType>()->setYaw(start_yaw);
-    // ROS_DEBUG_STREAM("Set rrt start state to ( " << turtle_start.pose.position.x << ", " << turtle_start.pose.position.y << ")");
+    ROS_DEBUG_STREAM("Set planner start state to (" << turtle_start.pose.position.x << ", " << turtle_start.pose.position.y << ")");
 
     tf::poseMsgToTF(turtle_goal.pose, pose);
     double goal_yaw = tf::getYaw(pose.getRotation());
@@ -115,43 +102,50 @@ bool OMPLBenchmarkPlanner::makePlan(const geometry_msgs::PoseStamped& turtle_sta
     goal_state->as<ompl::base::SE2StateSpace::StateType>()->setX(turtle_goal.pose.position.x);
     goal_state->as<ompl::base::SE2StateSpace::StateType>()->setY(turtle_goal.pose.position.y);
     goal_state->as<ompl::base::SE2StateSpace::StateType>()->setYaw(goal_yaw);
-    // ROS_DEBUG_STREAM("Set rrt goal state to ( " << turtle_goal.pose.position.x << ", " << turtle_goal.pose.position.y << ")");
+    ROS_DEBUG_STREAM("Set planner goal state to (" << turtle_goal.pose.position.x << ", " << turtle_goal.pose.position.y << ")");
     ss.setStartAndGoalStates(start_state, goal_state);
 
+    ompl::base::PlannerPtr spars2(new ompl::geometric::SPARStwo(si));
+    ss.setPlanner(spars2);
 
-    ROS_WARN("out of state validity check method");
+    ompl::base::OptimizationObjectivePtr obj(new ompl::base::PathLengthOptimizationObjective(si));
+    ss.setOptimizationObjective(obj);
+
+    // do not use this unless benchmark planner disabled
+    ss.setStateValidityChecker(boost::bind(&OMPLBenchmarkPlanner::stateIsValid, this, _1));
 
     ss.setup();
 
     ss.print();
 
-    //do planner benchmark
-	ompl::tools::Benchmark b(ss, "geometric_planner_benchmark");
+    // uncomment this to use the planner benchmark library and make sure to comment out state validity checker above
+    // do planner benchmark
+	// ompl::tools::Benchmark b(ss, "geometric_planner_benchmark");
     
-	b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::RRT(ss.getSpaceInformation())));
-    b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::RRTstar(ss.getSpaceInformation())));
-	b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::LazyRRT(ss.getSpaceInformation())));
-    b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::PRM(ss.getSpaceInformation())));
-    b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::LazyPRM(ss.getSpaceInformation())));
-	b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::SPARS(ss.getSpaceInformation())));
-	b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::SPARStwo(ss.getSpaceInformation())));
-	b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::FMT(ss.getSpaceInformation())));
-	b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::PDST(ss.getSpaceInformation())));
-    b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::STRIDE(ss.getSpaceInformation())));
+	// b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::RRT(ss.getSpaceInformation())));
+    // b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::RRTstar(ss.getSpaceInformation())));
+	// b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::LazyRRT(ss.getSpaceInformation())));
+    // b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::PRM(ss.getSpaceInformation())));
+    // b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::LazyPRM(ss.getSpaceInformation())));
+	// b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::SPARS(ss.getSpaceInformation())));
+	// b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::SPARStwo(ss.getSpaceInformation())));
+	// b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::FMT(ss.getSpaceInformation())));
+	// b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::PDST(ss.getSpaceInformation())));
+    // b.addPlanner(ompl::base::PlannerPtr(new ompl::geometric::STRIDE(ss.getSpaceInformation())));
 
-	ompl::tools::Benchmark::Request req;
-	req.maxTime = 5.0;
-	req.maxMem = 500.0;
-	req.runCount = 5;
-	req.displayProgress = true;
-	b.benchmark(req);
+	// ompl::tools::Benchmark::Request req;
+	// req.maxTime = 5.0;
+	// req.maxMem = 500.0;
+	// req.runCount = 5;
+	// req.displayProgress = true;
+	// b.benchmark(req);
 
-	// This will generate a file of the form ompl_host_time.log
-	b.saveResultsToFile();
+	// This will generate a file of the form ompl_host_time.log in the ~/.ros/ directory
+	// b.saveResultsToFile();
 
     ompl::base::PlannerStatus solved = ss.solve(2);
     if (solved) {
-        ROS_INFO("Found RRT solution:");
+        ROS_INFO("Found SPARS2 solution:");
         ss.simplifySolution();
         ompl::geometric::PathGeometric planner_soln = ss.getSolutionPath();
         planner_soln.print(std::cout);
@@ -167,7 +161,7 @@ bool OMPLBenchmarkPlanner::makePlan(const geometry_msgs::PoseStamped& turtle_sta
         plan_pub.publish(turtle_soln);
         ros::spinOnce();
     } else {
-        ROS_WARN("Could not find RRT solution...");
+        ROS_WARN("Could not find SPARS2 solution...");
     }
 return true;
 }
