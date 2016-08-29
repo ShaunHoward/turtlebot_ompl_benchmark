@@ -3,7 +3,7 @@ Path planning with the Turtlebot using various geometric path planning algorithm
 
 # installation instructions
 - cd ~/projects/ros_ws/src
-- git clone https://github.com/ShaunHoward/turtlebot_rrt.git
+- git clone https://github.com/ShaunHoward/turtlebot_ompl_benchmark.git
 - git clone https://github.com/clearpathrobotics/occupancy_grid_utils.git
 - install ros indigo (latest turtlebot capable version), make sure to run: echo "source /opt/ros/indigo/setup.bash" >> ~/.bashrc and source the .bashrc
 - sudo apt-get install libsdformat1 gazebo2 ros-indigo-turtlebot ros-indigo-turtlebot-apps ros-indigo-turtlebot-interactions ros-indigo-turtlebot-simulator ros-indigo-kobuki-ftdi ros-indigo-rocon-remocon ros-indigo-rocon-qt-library ros-indigo-ar-track-alvar-msgs libbullet-dev ros-indigo-tf2-bullet
