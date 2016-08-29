@@ -1,5 +1,5 @@
-# turtlebot_rrt
-Path planning with the Turtlebot using various RRT algorithms from ompl.
+# turtlebot_ompl_benchmark
+Path planning with the Turtlebot using various geometric path planning algorithms from OMPL.
 
 # installation instructions
 - cd ~/projects/ros_ws/src
