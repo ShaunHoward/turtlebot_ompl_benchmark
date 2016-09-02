@@ -16,7 +16,7 @@ Shaun Howard
 - rosdep install --from-paths . --ignore-src --rosdistro=indigo
 
 # create map
-- roslaunch turtlebot_rrt start_sim_map.launch
+- roslaunch turtlebot_ompl_benchmark start_sim_map.launch
 - roslaunch turtlebot_teleop keyboard_teleop.launch
 - create the map by driving around with keyboard commands
 - once map is ready to save: rosrun map_server map_saver -f /path/to/map_file
@@ -24,4 +24,4 @@ Shaun Howard
 # run robot simulator and planner with known map
 - cd ~/projects/ros_ws
 - catkin_make
-- roslaunch turtlebot_rrt start_sim_plan.launch 
+- roslaunch turtlebot_ompl_benchmark start_sim_plan.launch 
